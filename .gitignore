@@ -1,0 +1,16 @@
+# node
+node_modules/
+dist/
+.pnpm-store/
+*.log
+
+# env
+.env
+.env.*.local
+
+# editor
+.vscode/
+.idea/
+
+# misc
+.DS_Store

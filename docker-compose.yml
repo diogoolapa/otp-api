@@ -1,0 +1,21 @@
+services:
+  redis:
+    image: redis:7
+    container_name: otp_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  otp-api:
+    build:
+      context: .
+    container_name: otp_api
+    depends_on:
+      - redis
+    ports:
+      - "3000:3000"
+    environment:
+      REDIS_URL: redis://redis:6379
+    command: pnpm run dev
+    volumes:
+      - .:/app
