@@ -1,23 +1,26 @@
 import { randomInt } from 'crypto';
 import { redis } from '../../infra/redis';
-import { hashOtp, verifyHash } from '../../utils/hash'; // <- importa verifyHash
+import { hashOtp, verifyHash } from '../../utils/hash';
 import { env } from '../../config/env';
+import { logger } from '../../infra/logger';
 
-const OTP_TTL_SEC    = Number(env.OTP_TTL_SEC);        // ex: 300
-const MAX_ATTEMPTS   = Number(env.OTP_MAX_ATTEMPTS);   // ex: 5
-const BLOCK_TTL_SEC  = Number(env.OTP_BLOCK_TTL_SEC);  // ex: 900
+const OTP_TTL_SEC    = Number(env.OTP_TTL_SEC);
+const MAX_ATTEMPTS   = Number(env.OTP_MAX_ATTEMPTS);
+const BLOCK_TTL_SEC  = Number(env.OTP_BLOCK_TTL_SEC);
 
 export async function generateOtp(
-  identifier: string,
+  identifier: string, 
   channel: 'email' | 'sms'
 ): Promise<{ issued: boolean; ttl?: number; replaced?: boolean }> {
+  logger.debug({ op: 'otp:generate:start', identifier, channel });
+
   const key = `otp:${identifier}`;
   const attemptsKey = `otp:${identifier}:attempts`;
 
   const ttlExisting = await redis.ttl(key);
   if (ttlExisting && ttlExisting > 0) {
-    console.log(`[OTP][${channel}] Resend suppressed for ${identifier} (ttl=${ttlExisting}s)`);
-    return { issued: false, ttl: ttlExisting }; // ← 200 com “já existe, ainda válido”
+    logger.info({ op: 'otp:resend_suppressed', channel, identifier, ttl: ttlExisting });
+    return { issued: false, ttl: ttlExisting };
   }
 
   const otp = randomInt(100000, 999999).toString();
@@ -28,7 +31,12 @@ export async function generateOtp(
     .del(attemptsKey)
     .exec();
 
-    if (env.NODE_ENV !== 'production') console.log(`[OTP][${channel}] Sent code ${otp} to ${identifier}`);
+  if (env.NODE_ENV !== 'production') {
+    logger.info({ op: 'otp:issued', channel, identifier, ttl: OTP_TTL_SEC, otp });
+  } else {
+    logger.info({ op: 'otp:issued', channel, identifier, ttl: OTP_TTL_SEC });
+  }
+
   return { issued: true };
 }
 
@@ -36,34 +44,42 @@ export async function verifyOtp(
   identifier: string,
   code: string
 ): Promise<{ status: 'ok' | 'invalid' | 'expired' | 'blocked' }> {
-  const key        = `otp:${identifier}`;
-  const attemptsKey= `otp:${identifier}:attempts`;
-  const blockKey   = `otp:${identifier}:blocked`;
+  logger.debug({ op: 'otp:verify:start', identifier });
 
-  // bloqueado?
+  const key         = `otp:${identifier}`;
+  const attemptsKey = `otp:${identifier}:attempts`;
+  const blockKey    = `otp:${identifier}:blocked`;
+
   const blockedTtl = await redis.ttl(blockKey);
-  if (blockedTtl && blockedTtl > 0) return { status: 'blocked' };
+  if (blockedTtl && blockedTtl > 0) {
+    logger.warn({ op: 'otp:blocked', identifier, blockedTtl });
+    return { status: 'blocked' };
+  }
 
-  // existe OTP válido?
   const hashed = await redis.get(key);
-  if (!hashed) return { status: 'expired' };
+  if (!hashed) {
+    logger.warn({ op: 'otp:expired', identifier });
+    return { status: 'expired' };
+  }
 
-  // valida (corrigido: verifyHash, não verifyOtp)
   const isValid = await verifyHash(hashed, code);
   if (isValid) {
     await redis.multi().del(key).del(attemptsKey).del(blockKey).exec();
+    logger.info({ op: 'otp:verified_ok', identifier });
     return { status: 'ok' };
   }
 
-  // inválido → incrementa tentativas e alinha TTL do contador
   const attempts = await redis.incr(attemptsKey);
   if (attempts === 1) {
     const ttl = await redis.ttl(key);
     if (ttl > 0) await redis.expire(attemptsKey, ttl);
   }
 
+  logger.warn({ op: 'otp:invalid_attempt', identifier, attempts });
+
   if (attempts >= MAX_ATTEMPTS) {
     await redis.set(blockKey, '1', { EX: BLOCK_TTL_SEC });
+    logger.warn({ op: 'otp:blocked_now', identifier, blockTtl: BLOCK_TTL_SEC });
     return { status: 'blocked' };
   }
 
