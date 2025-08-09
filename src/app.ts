@@ -1,22 +1,28 @@
-import Fastify from 'fastify';
+import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { registerRoutes } from './routes';
 import { connectRedis } from './infra/redis';
 import { env } from './config/env';
 import { httpRequestDuration } from './infra/metrics';
 
-async function buildApp() {
+// Extendendo FastifyRequest para incluir _hrstart
+declare module 'fastify' {
+  interface FastifyRequest {
+    _hrstart?: bigint;
+  }
+}
+
+async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { level: env.LOG_LEVEL },
   });
 
   // Metrics
-  app.addHook('onRequest', async (req) => {
-    // marca início (ns)
-    (req as any)._hrstart = process.hrtime.bigint();
+  app.addHook('onRequest', async (req: FastifyRequest) => {
+    req._hrstart = process.hrtime.bigint();
   });
 
-  app.addHook('onResponse', async (req, reply) => {
-    const start = (req as any)._hrstart as bigint | undefined;
+  app.addHook('onResponse', async (req: FastifyRequest, reply: FastifyReply) => {
+    const start = req._hrstart;
     if (!start) return;
 
     const end = process.hrtime.bigint();
