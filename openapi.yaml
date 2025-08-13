@@ -1,0 +1,207 @@
+openapi: 3.0.3
+info:
+  title: OTP API
+  version: 1.0.0
+  description: API para criação e validação de OTP (Node.js + Fastify + Redis).
+
+servers:
+  - url: http://localhost:3000
+  - url: https://SEU_HOST_PROD
+  
+tags:
+  - name: Health
+  - name: OTP
+  - name: Metrics
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        '200':
+          description: Serviço operacional
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /otp/request:
+    post:
+      tags: [OTP]
+      summary: Criar um novo OTP
+      description: Gera um OTP para o identificador (email/telefone). Se já existir e estiver válido, suprime reenvio.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpRequestInput'
+            examples:
+              email:
+                value: { identifier: "user@example.com", channel: "email" }
+      responses:
+        '200':
+          description: OTP emitido ou reenvio suprimido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpRequestResponse'
+              examples:
+                issued:
+                  value: { issued: true, ttl: 300 }
+                suppressed:
+                  value: { issued: false, ttl: 240 }
+        '400':
+          description: Requisição inválida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit atingido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /otp/verify:
+    post:
+      tags: [OTP]
+      summary: Validar um OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyInput'
+      responses:
+        '200':
+          description: OTP válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpVerifyOk'
+        '401':
+          description: OTP inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpVerifyInvalid'
+        '410':
+          description: OTP expirado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpExpired'
+        '429':
+          description: Tentativas excedidas (bloqueio temporário)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpBlocked'
+        '400':
+          description: Requisição inválida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /otp/metrics:
+    get:
+      tags: [Metrics]
+      summary: Métricas Prometheus
+      responses:
+        '200':
+          description: Texto de métricas no formato Prometheus
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+
+    OtpRequestInput:
+      type: object
+      required: [identifier, channel]
+      properties:
+        identifier:
+          type: string
+          description: E-mail ou telefone (E.164)
+          example: user@example.com
+        channel:
+          type: string
+          enum: [email, sms]
+          example: email
+
+    OtpRequestResponse:
+      type: object
+      required: [issued]
+      properties:
+        issued:
+          type: boolean
+          description: true quando um novo OTP foi emitido; false quando suprimido
+          example: true
+        ttl:
+          type: integer
+          format: int32
+          description: Tempo restante (segundos) do OTP
+          example: 300
+
+    OtpVerifyInput:
+      type: object
+      required: [identifier, code]
+      properties:
+        identifier:
+          type: string
+          example: user@example.com
+        code:
+          type: string
+          pattern: '^\\d{6}$'
+          example: "123456"
+
+    OtpVerifyOk:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok]
+          example: ok
+
+    OtpVerifyInvalid:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [invalid]
+          example: invalid
+
+    OtpExpired:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [expired]
+          example: expired
+
+    OtpBlocked:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [blocked]
+          example: blocked
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Invalid request
