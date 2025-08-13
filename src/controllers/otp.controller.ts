@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { generateOtp, verifyOtp } from "../services/otp/otpService";
+import { generateOtp } from "../services/otp/otpGenerateService";
+import { verifyOtp } from "../services/otp/otpVerifyService";
 import { checkRateLimit } from "../services/rateLimitService";
 import { env } from "../config/env";
 import { otpRequests, otpVerifyOk, otpVerifyFail } from "../infra/metrics";

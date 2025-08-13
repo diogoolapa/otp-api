@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "dev": "tsx watch src/main/server.ts",
     "start": "node dist/main/server.js",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json",
     "test": "cross-env NODE_ENV=test vitest",
     "test:unit": "cross-env NODE_ENV=test LOG_LEVEL=debug vitest run tests/unit --reporter=verbose",
     "test:e2e": "cross-env NODE_ENV=test LOG_LEVEL=debug vitest run tests/e2e --reporter=verbose"

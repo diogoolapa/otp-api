@@ -1,20 +1,41 @@
-# Use Node.js 22 (versão mais recente e compatível com seu ambiente local)
-FROM node:22-slim
+# -------- Base --------
+FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
-# Cria o diretório de trabalho
 WORKDIR /app
 
-# Habilita o pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# -------- Deps (ci) --------
+FROM base AS deps
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-# Copia os arquivos do projeto
+# -------- Build --------
+FROM deps AS build
 COPY . .
+# Gera a build TS -> JS (ajuste o script "build" no package.json se necessário)
+RUN pnpm build
 
-# Instala as dependências
-RUN pnpm install
+# -------- Prod runtime --------
+FROM node:22-alpine AS prod
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+WORKDIR /app
 
-# Expõe a porta da API
-EXPOSE 3000
+# Só dependências de produção
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --prod --frozen-lockfile
 
-# Comando de inicialização
-CMD ["pnpm", "run", "dev"]
+# Copia artefatos de build
+COPY --from=build /app/dist ./dist
+COPY openapi.yaml ./openapi.yaml
+
+# Porta padrão do Cloud Run (variável PORT obrigatória)
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=8080
+
+EXPOSE 8080
+CMD ["node", "dist/main/server.js"]

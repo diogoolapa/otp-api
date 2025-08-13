@@ -1,0 +1,65 @@
+commit cedbfc3004532cfac6a2584ad65203a657c794b1
+Author: Diogo Lapa <diogoolapa@gmail.com>
+Date:   Wed Aug 13 01:18:03 2025 -0300
+
+    chore(config): update env.example, gitignore and dependencies
+
+commit c89a00a4fea2ec339d7d16b129ee595c6391c789
+Author: Diogo Lapa <diogoolapa@gmail.com>
+Date:   Wed Aug 13 01:17:57 2025 -0300
+
+    test(otp): update e2e and unit tests for new mailer/env flow
+
+commit 15812a048814458e164cf5881b74ca7195974794
+Author: Diogo Lapa <diogoolapa@gmail.com>
+Date:   Wed Aug 13 01:16:59 2025 -0300
+
+    chore(core): remove legacy OTP and metrics services
+
+commit b3b6fd90df3adc89ca9fe091ec7fc0bd2b30201a
+Author: Diogo Lapa <diogoolapa@gmail.com>
+Date:   Wed Aug 13 01:16:52 2025 -0300
+
+    refactor(core): integrate mailer and adjust routes/configuration
+
+commit 7e854ae49eef0101df8f83d43fe32829fede74a4
+Author: Diogo Lapa <diogoolapa@gmail.com>
+Date:   Wed Aug 13 01:16:42 2025 -0300
+
+    feat(core): add mailer, swagger, middlewares and test configuration
+
+commit 3cab8732738485612c0f956499569db160c8f3f1
+Author: Diogo Lapa <diogoolapa@gmail.com>
+Date:   Sat Aug 9 20:25:34 2025 -0300
+
+    test: add unit and E2E tests for OTP service with logger integration
+
+commit fb2565f53445f4e3dd2918e26f16d00d3f94fa9b
+Author: Diogo Lapa <diogoolapa@gmail.com>
+Date:   Sat Aug 9 16:43:56 2025 -0300
+
+    feat: add metrics, documentation and extra improvements
+
+commit e86305b2f865676aa850631ec933041c17f82eb0
+Author: Diogo Lapa <diogoolapa@gmail.com>
+Date:   Sat Aug 9 16:41:59 2025 -0300
+
+    feat: add Prometheus metrics and monitoring services
+
+commit 536a06afbfc5d322c415a75aa42dbdd4dc712142
+Author: Diogo Lapa <diogoolapa@gmail.com>
+Date:   Sat Aug 9 16:41:23 2025 -0300
+
+    feat: implement /otp/verify endpoint with validation, expiration and blocking rules
+
+commit b505d98f98a63c77d7d24a61517aaa0f95b62d40
+Author: Diogo Lapa <diogoolapa@gmail.com>
+Date:   Sat Aug 9 16:38:13 2025 -0300
+
+    feat: implement /otp/request endpoint with rate limiting and secure OTP generation
+
+commit f051fc8dec8e921c5a01d1b98067721b96915b00
+Author: Diogo Lapa <diogoolapa@gmail.com>
+Date:   Sat Aug 9 16:29:06 2025 -0300
+
+    feat: initial project setup with health check endpoint

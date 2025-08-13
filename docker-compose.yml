@@ -1,21 +1,29 @@
 services:
   redis:
-    image: redis:7
-    container_name: otp_redis
-    ports:
-      - "6379:6379"
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    command: ["redis-server","--appendonly","no"]
+    healthcheck:
+      test: ["CMD","redis-cli","-h","127.0.0.1","ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
-  otp-api:
+  api:
     build:
       context: .
-    container_name: otp_api
-    depends_on:
-      - redis
-    ports:
-      - "3000:3000"
+      dockerfile: Dockerfile
+    env_file:
+      - .env
     environment:
-      REDIS_URL: redis://redis:6379
-    command: pnpm run dev
-    volumes:
-      - .:/app
+      NODE_ENV: ${NODE_ENV}
+      LOG_PRETTY: "false" 
+      REDIS_URL: "redis://redis:6379"
+     # evita pino-pretty no container
+    ports: ["3000:3000"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: ["node","dist/main/server.js"]
+    restart: unless-stopped
