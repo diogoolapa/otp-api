@@ -3,6 +3,8 @@ import { registerRoutes } from './routes';
 import { connectRedis } from './infra/redis';
 import { env } from './config/env';
 import { httpRequestDuration } from './infra/metrics';
+import { registerSwagger } from './infra/swagger';
+import { HttpError } from './utils/httpError';
 
 // Extendendo FastifyRequest para incluir _hrstart
 declare module 'fastify' {
@@ -16,7 +18,7 @@ async function buildApp(): Promise<FastifyInstance> {
     logger: { level: env.LOG_LEVEL },
   });
 
-  // Metrics
+  // Métricas
   app.addHook('onRequest', async (req: FastifyRequest) => {
     req._hrstart = process.hrtime.bigint();
   });
@@ -28,7 +30,6 @@ async function buildApp(): Promise<FastifyInstance> {
     const end = process.hrtime.bigint();
     const seconds = Number(end - start) / 1e9;
 
-    // rota normalizada: usa a URL declarada da rota quando disponível
     const route = (req.routeOptions?.url as string) || req.url;
     const method = req.method;
     const status = String(reply.statusCode);
@@ -36,7 +37,11 @@ async function buildApp(): Promise<FastifyInstance> {
     httpRequestDuration.labels(method, route, status).observe(seconds);
   });
 
-  // CORS
+  
+   // Swagger
+   await registerSwagger(app);
+
+   //CORS
   await app.register(import('@fastify/cors'), {
     origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'],
     credentials: true,
@@ -44,20 +49,52 @@ async function buildApp(): Promise<FastifyInstance> {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Segurança
+  //Segurança
   await app.register(import('@fastify/helmet'));
 
-  // Conexão ao Redis
+  // Redis
   await connectRedis();
 
-  // Rotas (apontando pros controllers)
+   //Rotas
   await app.register(registerRoutes);
 
-  // Error handler global
+  //404 handler
+  app.setNotFoundHandler((req, reply) => {
+    reply.status(404).send({
+      error: 'not_found',
+      message: `Route ${req.method} ${req.url} not found`
+    });
+  });
+
+  //Error handler global
   app.setErrorHandler((err, _req, reply) => {
-    app.log.error(err);
+    app.log.error({ err }, 'Unhandled error');
+
+    // Validação Fastify/Zod
+    // @ts-ignore
+    if (err.validation) {
+      return reply.status(400).send({
+        error: 'validation_error',
+        message: 'Invalid request data',
+        // @ts-ignore
+        details: err.validation
+      });
+    }
+
+    // Erro customizado HttpError
+    if (err instanceof HttpError) {
+      return reply.status(err.statusCode).send({
+        error: err.errorCode,
+        message: err.message
+      });
+    }
+
+    // Erro genérico
     const status = (err as any).statusCode ?? 500;
-    reply.status(status).send({ error: (err as any).message ?? 'Internal Server Error' });
+    reply.status(status).send({
+      error: 'internal_server_error',
+      message: err.message ?? 'Internal Server Error'
+    });
   });
 
   return app;
