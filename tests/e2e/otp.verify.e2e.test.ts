@@ -79,6 +79,6 @@ describe('POST /otp/verify', () => {
       .send({ identifier, code: otp })
       .expect(429);
 
-    expect(res.body.error).toBe('Too many attempts');
+    expect(res.body.error).toBe('too_many_requests');
   });
 });

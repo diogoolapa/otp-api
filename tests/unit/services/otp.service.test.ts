@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as otpService from '../../../src/services/otp/otp.service';
+import * as otpService from '../../../src/services/otp/otpService';
 import * as hasher from '../../../src/utils/hash';
 import { redis } from '../../../src/infra/redis';
 import { logger } from '../../../src/infra/logger';
