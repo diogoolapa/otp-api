@@ -7,6 +7,7 @@ dist/
 # env
 .env
 .env.*.local
+.env.test
 
 # editor
 .vscode/
