@@ -1,25 +1,26 @@
 import { z } from "zod";
 
-// Prepara process.env.REDIS_URL a partir de UPSTASH_REDIS_URL_TCP, se necessário
-if (!process.env.REDIS_URL && process.env.UPSTASH_REDIS_URL_TCP) {
-  process.env.REDIS_URL = process.env.UPSTASH_REDIS_URL_TCP;
+function isValidUrl(u: string) {
+  try { new URL(u); return true; } catch { return false; }
+}
+
+function pickRedisUrl() {
+  const candidates = [
+    process.env.REDIS_URL,                 // pode vir "" do compose
+    process.env.UPSTASH_REDIS_URL_TCP,     // Upstash (tcp://... ou rediss://...)
+    process.env.NODE_ENV === "production" ? undefined : "redis://redis:6379", // docker local
+    "redis://localhost:6379",              // fallback local
+  ];
+
+  for (const v of candidates) {
+    const s = (v ?? "").trim();
+    if (s && isValidUrl(s)) return s;
+  }
+  return "redis://localhost:6379";
 }
 
 const envSchema = z.object({
-  REDIS_URL: z
-    .string()
-    .default("redis://localhost:6379")
-    .refine(
-      (val) => {
-        try {
-          new URL(val);
-          return true;
-        } catch {
-          return false;
-        }
-      },
-      { message: "Invalid URL format" }
-    ),
+  REDIS_URL: z.string().refine(isValidUrl, { message: "Invalid URL format" }),
   LOG_LEVEL: z.string().default("info"),
   OTP_TTL_SEC: z.string().default("300"),
   OTP_MAX_ATTEMPTS: z.string().default("5"),
@@ -31,4 +32,7 @@ const envSchema = z.object({
   APP_NAME: z.string().default("OTP API"),
 });
 
-export const env = envSchema.parse(process.env);
+export const env = envSchema.parse({
+  ...process.env,
+  REDIS_URL: pickRedisUrl(),
+});

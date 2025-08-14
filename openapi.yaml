@@ -6,8 +6,7 @@ info:
 
 servers:
   - url: http://localhost:3000
-  - url: https://SEU_HOST_PROD
-  
+ 
 tags:
   - name: Health
   - name: OTP

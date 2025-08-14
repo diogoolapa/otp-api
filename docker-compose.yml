@@ -19,7 +19,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV}
       LOG_PRETTY: "false" # evita pino-pretty no container
-      REDIS_URL: ${REDIS_URL} # ex: rediss://:password@gusc1-xxx.upstash.io:30001
+      REDIS_URL: ${REDIS_URL:-${UPSTASH_REDIS_URL_TCP:-redis://localhost:6379}} # ex: rediss://:password@gusc1-xxx.upstash.io:30001
       HOST: "0.0.0.0"
       PORT: "3000"
     ports: ["3000:3000"]

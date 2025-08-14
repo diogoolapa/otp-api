@@ -1,5 +1,5 @@
 # -------- Base --------
-FROM node:22-alpine AS base
+FROM node:22.11.0-alpine3.20 AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -21,7 +21,7 @@ RUN pnpm build
 FROM node:22-alpine AS prod
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+# RUN corepack enable
 WORKDIR /app
 
 # Só dependências de produção
@@ -32,10 +32,5 @@ RUN pnpm install --prod --frozen-lockfile
 COPY --from=build /app/dist ./dist
 COPY openapi.yaml ./openapi.yaml
 
-# Porta padrão do Cloud Run (variável PORT obrigatória)
-ENV NODE_ENV=production
-ENV HOST=0.0.0.0
-ENV PORT=8080
-
-EXPOSE 8080
+EXPOSE 3000
 CMD ["node", "dist/main/server.js"]
