@@ -2,9 +2,9 @@ services:
   redis:
     image: redis:7-alpine
     ports: ["6379:6379"]
-    command: ["redis-server","--appendonly","no"]
+    command: ["redis-server", "--appendonly", "no"]
     healthcheck:
-      test: ["CMD","redis-cli","-h","127.0.0.1","ping"]
+      test: ["CMD", "redis-cli", "-h", "127.0.0.1", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -18,12 +18,13 @@ services:
       - .env
     environment:
       NODE_ENV: ${NODE_ENV}
-      LOG_PRETTY: "false" 
-      REDIS_URL: "redis://redis:6379"
-     # evita pino-pretty no container
+      LOG_PRETTY: "false" # evita pino-pretty no container
+      REDIS_URL: ${REDIS_URL} # ex: rediss://:password@gusc1-xxx.upstash.io:30001
+      HOST: "0.0.0.0"
+      PORT: "3000"
     ports: ["3000:3000"]
     depends_on:
       redis:
         condition: service_healthy
-    command: ["node","dist/main/server.js"]
+    command: ["node", "dist/main/server.js"]
     restart: unless-stopped
