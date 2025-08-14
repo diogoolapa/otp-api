@@ -5,8 +5,9 @@ info:
   description: API para criação e validação de OTP (Node.js + Fastify + Redis).
 
 servers:
+  - url: https://otp-api-654426220717.us-central1.run.app
   - url: http://localhost:3000
- 
+
 tags:
   - name: Health
   - name: OTP
