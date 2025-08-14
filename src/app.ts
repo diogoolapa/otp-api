@@ -41,7 +41,7 @@ async function buildApp(): Promise<FastifyInstance> {
       const status = String(reply.statusCode);
 
       httpRequestDuration.labels(method, route, status).observe(seconds);
-    }
+    },
   );
 
   // Swagger

@@ -1,15 +1,20 @@
 import { z } from "zod";
 
 function isValidUrl(u: string) {
-  try { new URL(u); return true; } catch { return false; }
+  try {
+    new URL(u);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function pickRedisUrl() {
   const candidates = [
-    process.env.REDIS_URL,                 // pode vir "" do compose
-    process.env.UPSTASH_REDIS_URL_TCP,     // Upstash (tcp://... ou rediss://...)
+    process.env.REDIS_URL, // pode vir "" do compose
+    process.env.UPSTASH_REDIS_URL_TCP, // Upstash (tcp://... ou rediss://...)
     process.env.NODE_ENV === "production" ? undefined : "redis://redis:6379", // docker local
-    "redis://localhost:6379",              // fallback local
+    "redis://localhost:6379", // fallback local
   ];
 
   for (const v of candidates) {

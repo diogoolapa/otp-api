@@ -35,7 +35,7 @@ export async function handleOtpRequest(req: OtpRequest, reply: FastifyReply) {
   const ok = await checkRateLimit(
     `${identifier}:${req.ip ?? "unknown"}`,
     limit,
-    60
+    60,
   );
   if (!ok) {
     Metrics.incRateLimitHit?.();
@@ -76,7 +76,11 @@ export async function handleOtpVerify(req: OtpVerify, reply: FastifyReply) {
     if (result.status === "blocked")
       return reply
         .status(429)
-        .send({ success: false, error: "too_many_requests", message: "Try again later" });
+        .send({
+          success: false,
+          error: "too_many_requests",
+          message: "Try again later",
+        });
     return reply.status(401).send({ success: false, error: "Invalid code" });
   } catch (err) {
     req.log.error(err);

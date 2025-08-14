@@ -31,7 +31,7 @@ export class Mailer {
       } else {
         this.mode = "console";
         logger.warn(
-          "[Mailer] RESEND_API_KEY ausente — usando modo console (mock)"
+          "[Mailer] RESEND_API_KEY ausente — usando modo console (mock)",
         );
       }
     }
@@ -51,7 +51,7 @@ export class Mailer {
     if (this.mode === "console") {
       logger.info(
         { op: "mailer:mock_send", to, subject, code },
-        "Simulando envio de e-mail"
+        "Simulando envio de e-mail",
       );
       return { id: "mock" };
     }

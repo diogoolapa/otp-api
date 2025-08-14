@@ -1,6 +1,6 @@
-import { createClient } from 'redis';
-import { env } from '../config/env';
-import { logger } from './logger';
+import { createClient } from "redis";
+import { env } from "../config/env";
+import { logger } from "./logger";
 
 // Backoff exponencial até 10s
 const reconnectStrategy = (retries: number) => {
@@ -14,11 +14,13 @@ export const redis = createClient({
   socket: { keepAlive: true, reconnectStrategy },
 });
 
-redis.on('connect',       () => logger.info('[Redis] connect'));
-redis.on('ready',         () => logger.info('[Redis] ready'));
-redis.on('end',           () => logger.warn('[Redis] connection ended'));
-redis.on('reconnecting',  () => logger.warn('[Redis] reconnecting...'));
-redis.on('error', (err)   => logger.error(`[Redis] error: ${err?.message || err}`));
+redis.on("connect", () => logger.info("[Redis] connect"));
+redis.on("ready", () => logger.info("[Redis] ready"));
+redis.on("end", () => logger.warn("[Redis] connection ended"));
+redis.on("reconnecting", () => logger.warn("[Redis] reconnecting..."));
+redis.on("error", (err) =>
+  logger.error(`[Redis] error: ${err?.message || err}`),
+);
 
 export async function connectRedis() {
   if (redis.isOpen || redis.isReady) return;
@@ -27,9 +29,11 @@ export async function connectRedis() {
     const pong = await redis.ping();
     logger.info(`[Redis] connected: ${pong}`);
   } catch (err: any) {
-    logger.error(`[Redis] initial connect failed: ${err?.code || err?.message || err}`);
+    logger.error(
+      `[Redis] initial connect failed: ${err?.code || err?.message || err}`,
+    );
     // Em dev, não derruba a app; o retry acima cuida de reconectar
-    if (env.NODE_ENV === 'production') throw err;
+    if (env.NODE_ENV === "production") throw err;
   }
 }
 

@@ -1,4 +1,4 @@
-import * as argon2 from 'argon2';
+import * as argon2 from "argon2";
 
 export async function hashOtp(code: string): Promise<string> {
   // custo padrão do argon2 já é ok pra OTP
