@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import * as otpService from "../../../src/services/otp/otpService";
+import * as otpVerifyService from "../../../src/services/otp/otpVerifyService";
+import * as otpGenerateService from "../../../src/services/otp/otpGenerateService";
 import * as hasher from "../../../src/utils/hash";
 import { redis } from "../../../src/infra/redis";
 import { logger } from "../../../src/infra/logger";
@@ -73,7 +74,7 @@ describe("otp.service (unit)", () => {
   it("generateOtp should return issued=true when new OTP created (logs visible)", async () => {
     // força sucesso de hash para garantir emissão e, portanto, log
     vi.spyOn(hasher, "hashOtp").mockResolvedValue("hash");
-    const res = await otpService.generateOtp("u@ex.com", "email");
+    const res = await otpGenerateService.generateOtp("u@ex.com", "email");
     expect(res.issued).toBe(true);
   });
 
@@ -82,7 +83,7 @@ describe("otp.service (unit)", () => {
     await redis.set("otp:u@ex.com", "some-hash");
     vi.spyOn(hasher, "verifyHash").mockResolvedValue(false);
 
-    const res = await otpService.verifyOtp("u@ex.com", "000000");
+    const res = await otpVerifyService.verifyOtp("u@ex.com", "000000");
     expect(["invalid", "blocked"]).toContain(res.status);
   });
 });
