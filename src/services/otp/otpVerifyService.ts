@@ -3,7 +3,6 @@ import { redis } from "../../infra/redis";
 import { hashOtp, verifyHash } from "../../utils/hash";
 import { env } from "../../config/env";
 import { logger } from "../../infra/logger";
-import { Mailer } from "../../infra/mailer";
 
 // ---------- Config ----------
 const MAX_ATTEMPTS = Number(env.OTP_MAX_ATTEMPTS);

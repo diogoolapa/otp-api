@@ -4,7 +4,7 @@ import { generateOtp } from "../services/otp/otpGenerateService";
 import { verifyOtp } from "../services/otp/otpVerifyService";
 import { checkRateLimit } from "../services/rateLimitService";
 import { env } from "../config/env";
-import { otpRequests, otpVerifyOk, otpVerifyFail } from "../infra/metrics";
+import { otpVerifyOk, otpVerifyFail } from "../infra/metrics";
 import { Metrics } from "../services/otp/metricsService";
 
 const requestSchema = z.object({
